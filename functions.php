@@ -107,9 +107,17 @@ add_action( 'widgets_init', 'barbareshet_widgets_init' );
  * Enqueue scripts and styles.
  */
 function barbareshet_scripts() {
-	wp_enqueue_style( 'barbareshet-style', get_stylesheet_uri() );
-
-	wp_enqueue_script( 'barbareshet-navigation', get_template_directory_uri() . '/js/navigation.js', array(), '20151215', true );
+    //bootstrap 4
+    wp_enqueue_style('barbareshet-bootstrap-4', get_stylesheet_directory_uri() . '/assets/lib/bootstrap-4/css/bootstrap.min.css', [], microtime());
+    //main style
+    wp_enqueue_style( 'barbareshet-style', get_stylesheet_uri() );
+    //rtl
+    wp_enqueue_style('barbareshet-rtl-4', get_stylesheet_directory_uri() . '/rtl.css', [], microtime());
+    //bootstrap
+    wp_enqueue_script('barbareshet-bootstrap-4-scripts', get_stylesheet_directory_uri() .'/assets/lib/bootstrap-4/js/bootstrap.min.js', array('jquery'), microtime(), true);
+    //main script
+    wp_enqueue_script('barbareshet-scripts', get_stylesheet_directory_uri() .'/assets/js/main.js', array('jquery'), microtime(), true);
+    wp_enqueue_script( 'barbareshet-navigation', get_template_directory_uri() . '/js/navigation.js', array(), '20151215', true );
 
 	wp_enqueue_script( 'barbareshet-skip-link-focus-fix', get_template_directory_uri() . '/js/skip-link-focus-fix.js', array(), '20151215', true );
 
@@ -143,3 +151,68 @@ require get_template_directory() . '/inc/customizer.php';
  * Load Jetpack compatibility file.
  */
 require get_template_directory() . '/inc/jetpack.php';
+
+
+function themeInit(){
+    /**
+     * hide the admin bar
+     */
+//	add_filter('show_admin_bar', '__return_false');
+
+    /**
+     * ACF setup
+     */
+    // 1. customize ACF path
+    add_filter('acf/settings/path', 'my_acf_settings_path');
+    function my_acf_settings_path($path)
+    {
+        $path = get_template_directory() . '/inc/plugins/acf/';
+        return $path;
+    }
+
+    // 2. customize ACF dir
+    add_filter('acf/settings/dir', 'my_acf_settings_dir');
+    function my_acf_settings_dir($dir)
+    {
+        $dir = get_stylesheet_directory_uri() . '/inc/plugins/acf/';
+        return $dir;
+    }
+
+    // 3. Hide ACF field group menu item
+    //add_filter('acf/settings/show_admin', '__return_false');
+
+    // 4. Include ACF
+    include_once(get_template_directory() . '/inc/plugins/acf/acf.php');
+
+    if (function_exists('acf_add_options_page')) {
+        acf_add_options_page(array(
+            'page_title' => __('Theme Options', 'amf'),
+            'menu_title' => __('Theme Options', 'amf'),
+            'menu_slug' => __('theme-options', 'amf')
+        ));
+    }
+
+    add_filter('acf/settings/save_json', 'my_acf_json_save_point');
+    function my_acf_json_save_point($path)
+    {
+        $path = get_template_directory() . '/inc/plugins/acf_json';
+
+        return $path;
+    }
+
+    add_filter('acf/settings/load_json', 'my_acf_json_load_point');
+
+    function my_acf_json_load_point($paths)
+    {
+        unset($paths[0]);
+        $paths[] = get_stylesheet_directory() . '/inc/plugins/acf_json';
+        //wp_die(var_dump($paths));
+        return $paths;
+    }
+
+    //acf fields and options
+    include_once(get_template_directory() . '/inc/plugins/acf-repeater-editor-accordion/acf-repeater-accordion.php');
+    include_once(get_template_directory() . '/inc/plugins/sliders-fields/acf-sliders.php');
+}
+
+themeInit();
